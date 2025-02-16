@@ -17,6 +17,7 @@
   "name": "Cro::HTTP::Session::SQLite",
   "perl": "6.*",
   "provides": {
+	  "Cro::HTTP::Session::SQLite": "lib/Cro/HTTP/Session/SQLite.rakumod"
   },
   "resources": [
   ],

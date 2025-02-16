@@ -1,0 +1,37 @@
+{
+  "auth": "zef:demayl",
+  "authors": [
+    "Denis Kanchev <denis@fluxark.com>"
+  ],
+  "build-depends": [
+  ],
+  "depends": [
+    "MIME::Base64",
+    "OpenSSL",
+    "Cro::HTTP",
+    "JSON::Fast",
+    "DBIish"
+  ],
+  "description": "An implementation of Cro persistent sessions using SQLite.",
+  "license": "Artistic-2.0",
+  "name": "Cro::HTTP::Session::SQLite",
+  "perl": "6.*",
+  "provides": {
+  },
+  "resources": [
+  ],
+  "source-url": "https://github.com/Demayl/cro-http-session-sqlite.git",
+  "support": {
+    "bugtracker": "https://github.com/Demayl/cro-http-session-sqlite/issues",
+    "source": "git://github.com/Demayl/cro-http-session-sqlite.git"
+  },
+  "tags": [
+    "Cro",
+    "HTTP",
+    "Session",
+    "SQLite"
+  ],
+  "test-depends": [
+  ],
+  "version": "1.0.0"
+}

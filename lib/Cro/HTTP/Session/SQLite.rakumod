@@ -14,28 +14,28 @@ role Cro::HTTP::Session::SQLite[::TSession] does Cro::HTTP::Middleware::RequestR
 	my Supply $supply   	= Nil;
 	my Lock::Async $lock 	= Lock::Async.new;
 
-    #| The database connection.
-    has DBDish::SQLite::Connection $.db;
+	#| The database connection.
+	has DBDish::SQLite::Connection $.db;
 
 	has IO::Path $.db-path 		= 'sessions.db'.IO;
 
 	#| The cookie name or will fail on missing one
-    has Str $.cookie-name 		= 'CroCookie';
+	has Str $.cookie-name 		= 'CroCookie';
 
-    #| The duration of the session; defaults to 30 minutes.
-    has Duration $.expiration   = Duration.new(30 * 60);
+	#| The duration of the session; defaults to 30 minutes.
+	has Duration $.expiration   = Duration.new(30 * 60);
 
-    #| The sessions table name; defaults to 'sessions'.
-    has Str $.sessions-table 	= 'sessions';
+	#| The sessions table name; defaults to 'sessions'.
+	has Str $.sessions-table 	= 'sessions';
 
-    #| The session ID column name; defaults to 'id'.
-    has Str $.id-column 		= 'id';
+	#| The session ID column name; defaults to 'id'.
+	has Str $.id-column 		= 'id';
 
-    #| The session state column name; defaults to 'state'.
-    has Str $.state-column 		= 'state';
+	#| The session state column name; defaults to 'state'.
+	has Str $.state-column 		= 'state';
 
-    #| The session expiration column; defaults to 'expiration'.
-    has Str $.expiration-column = 'expiration';
+	#| The session expiration column; defaults to 'expiration'.
+	has Str $.expiration-column = 'expiration';
 
 	#| The ip address column; defaults to 'ip_addr'
 	has Str $.ip-addr-column 	= 'ip_addr';
@@ -123,20 +123,20 @@ role Cro::HTTP::Session::SQLite[::TSession] does Cro::HTTP::Middleware::RequestR
 		}
 	}
 
-    method expiration() { $!expiration }
-    method cookie-name() { $!cookie-name }
+	method expiration() { $!expiration }
+	method cookie-name() { $!cookie-name }
 
-    #| Creates a new session by making a database table entry.
-    method create(Str $session-id) {
+	#| Creates a new session by making a database table entry.
+	method create(Str $session-id) {
 		my $sth = $!db.execute("INSERT INTO $!sessions-table ( $!id-column, $!state-column, $!expiration-column )
 			VALUES (?, ?, ?)", $session-id, "", (DateTime.now + $!expiration).Str
 		);
 		$sth.dispose();
 
-    }
+	}
 
-    #| Loads a session from the database.
-    method load(Str $session-id --> TSession) {
+	#| Loads a session from the database.
+	method load(Str $session-id --> TSession) {
 		my $sth 	= $!db.execute("SELECT $!state-column, $!ip-addr-column FROM $!sessions-table WHERE $!id-column = ?", $session-id);
 		my $db-data = $sth.row() || fail "Missing session";
 		my $data 	= self.deserialize( $db-data.first );
@@ -149,11 +149,11 @@ role Cro::HTTP::Session::SQLite[::TSession] does Cro::HTTP::Middleware::RequestR
 		}
 
 		return $data;
-    }
+	}
 
-    #| Saves a session to the database.
-    method save(Str $session-id, TSession $session --> Nil) {
-        my $json 		:= self.serialize($session);
+	#| Saves a session to the database.
+	method save(Str $session-id, TSession $session --> Nil) {
+		my $json 		:= self.serialize($session);
 
 		my @values 		= ( self.encrypt( to-json($json) ) || '{}', (DateTime.now + $!expiration).Str );
 		my Str $fields  = "$!state-column = ?, $!expiration-column = ?";
@@ -174,21 +174,21 @@ role Cro::HTTP::Session::SQLite[::TSession] does Cro::HTTP::Middleware::RequestR
 			|@values, $session-id
 		);
 		$sth.dispose();
-    }
+	}
 
-    #| Clears expired sessions from the database.
-    method clear(--> Int) {
+	#| Clears expired sessions from the database.
+	method clear(--> Int) {
 		my $sth = $!db.execute("DELETE FROM $!sessions-table WHERE $!expiration-column < ?", DateTime.now.Str);
 		my Int $deleted = $sth.rows();
 		$sth.dispose();
 		$deleted;
-    }
+	}
 
-    #| Serialize a session for storage. By default, serializes its
-    #| public attributes into JSON (obtained by .Capture.hash); for
-    #| any non-trivial session state, this shall need to be overridden.
+	#| Serialize a session for storage. By default, serializes its
+	#| public attributes into JSON (obtained by .Capture.hash); for
+	#| any non-trivial session state, this shall need to be overridden.
 	#| Wont store any uninitialized field
-    method serialize(TSession $s --> Hash) {
+	method serialize(TSession $s --> Hash) {
 		my %hash = $s.Capture.hash;
 
 		# JSON::Fast will store arrays as [] and Nil values as Any, so fix it here
@@ -198,28 +198,28 @@ role Cro::HTTP::Session::SQLite[::TSession] does Cro::HTTP::Middleware::RequestR
 				next;
 			}
 		}
-        %hash
-    }
+		%hash
+	}
 
-    #| Deserialize a session from storage. By default, passes the
-    #| serialized data to the new method of the session. For any
-    #| non-trivial state, this will need to be overridden.
-    method deserialize(Str $d='') {
-        TSession.new(|from-json( self.decrypt($d) ))
-    }
+	#| Deserialize a session from storage. By default, passes the
+	#| serialized data to the new method of the session. For any
+	#| non-trivial state, this will need to be overridden.
+	method deserialize(Str $d='') {
+		TSession.new(|from-json( self.decrypt($d) ))
+	}
 
-    method process-responses(Supply $responses) {
-        my %cookie-opts = max-age => $!expiration, :http-only, path => '/';
-        supply whenever $responses -> $res {
-            with $res.request.cookie-value($!cookie-name) {
-                $res.set-cookie($!cookie-name, $_, |%cookie-opts);
-                self.save($_, $res.request.auth);
-            } orwith $res.request.auth {
+	method process-responses(Supply $responses) {
+		my %cookie-opts = max-age => $!expiration, :http-only, path => '/';
+		supply whenever $responses -> $res {
+			with $res.request.cookie-value($!cookie-name) {
+				$res.set-cookie($!cookie-name, $_, |%cookie-opts);
+				self.save($_, $res.request.auth);
+			} orwith $res.request.auth {
 				my $content-type = $res.request.header('content-type');
 				my $ip-addr = $res.request.connection.peer-host;
 
 
-                # Setting a cookie if not skipped
+				# Setting a cookie if not skipped
 				if !$!skip-cookie || !$!skip-cookie.( $res ) {
 					my $cookie-value = generate-session-id();
 					$res.set-cookie($!cookie-name, $cookie-value, |%cookie-opts);
@@ -230,10 +230,10 @@ role Cro::HTTP::Session::SQLite[::TSession] does Cro::HTTP::Middleware::RequestR
 						self.save($cookie-value, $res.request.auth);
 					}
 				}
-            }
-            emit $res;
+			}
+			emit $res;
 		}
-    }
+	}
 
 	method process-requests(Supply $requests) {
 		supply whenever $requests -> $req {
@@ -356,26 +356,26 @@ CREATE INDEX expired_date ON sessions (expiration);
 
 =begin code :lang<raku>
 class MySession {
-    has $.user-id;
+	has $.user-id;
 	has $.ip-addr;
 
-    method set-logged-in-user($!user-id --> Nil) { }
-    method is-logged-in(--> Bool) { $!user-id.defined }
+	method set-logged-in-user($!user-id --> Nil) { }
+	method is-logged-in(--> Bool) { $!user-id.defined }
 }
 
 my $application = route {
 
-    before Cro::HTTP::Session::SQLite[UserSession].new();
+	before Cro::HTTP::Session::SQLite[UserSession].new();
 
-    get -> UserSession $user {
-        $user.user-id = 123;
+	get -> UserSession $user {
+		$user.user-id = 123;
 		$user.ip-addr = '127.0.0.1';
-        content 'text/plain', "Hello, TEST!";
-    }
+		content 'text/plain', "Hello, TEST!";
+	}
 }
 
 my Cro::Service $hello = Cro::HTTP::Server.new:
-    :host<localhost>, :port(80), :$application;
+	:host<localhost>, :port(80), :$application;
 =end code
 
 Here are the keypoints here:
@@ -495,15 +495,15 @@ Instead of using the Cro::HTTP::Session::SQLite role directly, create a class th
 
 =begin code :lang<raku>
 class MySessionStore does Cro::HTTP::Session::SQLite[MySession] {
-    method serialize(MySession $s --> Hash) {
-        # Replace this with your serialization logic.
-        $s.Capture.hash
-    }
-    
-    method deserialize(Str $d --> MySession) {
-        # Replace this with your deserialization logic.
-        Session.new(|from-json($d))
-    }
+	method serialize(MySession $s --> Hash) {
+		# Replace this with your serialization logic.
+		$s.Capture.hash
+	}
+
+	method deserialize(Str $d --> MySession) {
+		# Replace this with your deserialization logic.
+		Session.new(|from-json($d))
+	}
 }
 =end code
 

@@ -149,18 +149,23 @@ For full setup see the constructor below
 All fields are optional
 
 > DBDish::SQLite::Connection $.db
+
 DBIish connection. **Default** auto connects
 
 > IO::Path $.db-path
+
 Path to the DB SQLite3 file. **Default** `./sessions.db`
 
 > Str $.cookie-name
+
 Name of the cookie. **Default** CroCookie
 
 > Duration $.expiration
+
 Expiration duration for the cookie. **Default** `Duration.new( 30*60 )`
 
 > Int $.autoclean-every-seconds
+
 Session cleanup every X seconds. **Default** 1800
 
 * -1 Disable session removal
@@ -168,53 +173,66 @@ Session cleanup every X seconds. **Default** 1800
 * 1+ Delete the expired sessions every X seconds
 
 > Str $.sessions-table
+
 Name of the DB table. **Default** sessions
 
 > Str $.id-column
+
 Name of the ID column in the DB. **Default** id
 
 > Str $.state-column
+
 Name of the state column in the DB. **Default** state
 
 > Str $.expiration-column
+
 Name Of the expiration column. **Default** expiration
 
 > Str $.ip-addr-column
+
 Name of the IP address column. **Default** ip_addr
 
 > Str $.user-id-column
+
 Name of the User ID column. **Default** user_id
 
 > Str $.created-column
+
 Name of the Created column. **Default** created
 
 > Str $.ip-addr-field
+
 Field name from your Session object, that is used to store the IP address in the table column $.ip-addr-column. **Default** ip-addr
 
--2 Nil to disable storing the IP address
+* Nil to disable storing the IP address
 
 > Str $.user-id-field
+
 Field name from your Session object, that is used to store the User ID in the table column $.user-id-column. **Default** user-id
 
--2 Nil to disable storing the User ID
+* Nil to disable storing the User ID
 
 > Bool $.restrict-ip-addr
+
 IP cookie bind. Looksup the $.ip-addr-field from your Session object. **Default** *True*
 
 > Callable &.skip-cookie
+
 Custom function that can disable the session. **Default** *Nil*
 
 > Buf() $.key
-Encryption key. See L<OpenSSL|https://raku.land/github:sergot/OpenSSL#opensslcrypttools> for more information
+
+Encryption key. See [OpenSSL](https://raku.land/github:sergot/OpenSSL#opensslcrypttools) for more information
 
 > Buf() $.iv
-IV. See L<OpenSSL|https://raku.land/github:sergot/OpenSSL#opensslcrypttools> for more information
+
+IV. See [OpenSSL](https://raku.land/github:sergot/OpenSSL#opensslcrypttools) for more information
 
 # Controlling serialized data
 
 Instead of using the Cro::HTTP::Session::SQLite role directly, create a class that composes it.
 
-=begin code :lang<raku>
+```raku
 class MySessionStore does Cro::HTTP::Session::SQLite[MySession] {
     method serialize(MySession $s --> Hash) {
         # Replace this with your serialization logic.
@@ -226,7 +244,7 @@ class MySessionStore does Cro::HTTP::Session::SQLite[MySession] {
         Session.new(|from-json($d))
     }
 }
-=end code
+```
 
 
 # AUTHOR

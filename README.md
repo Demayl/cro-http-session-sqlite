@@ -76,7 +76,7 @@ CREATE INDEX expired_date ON sessions (expiration);
 
 
 ```raku
-class MySession {
+class UserSession {
     has $.user-id;
 	has $.ip-addr;
 
@@ -114,7 +114,7 @@ Here are the keypoints here:
 before Cro::HTTP::Session::SQLite[UserSession].new( 
 	expiration => Duration.new(60 * 60), # 60 minutes expiration
 	cookie-name => 'CustomCookieName',
-	db-path => '/home/user/app/sessions.db',
+	db-path => '/home/user/app/sessions.db'.IO,
 	restrict-ip-addr => True,
 	autoclean-every-seconds => 60, # Cleanup the sessions table every 60 seconds
 	key => ("0" x 32).encode, - Encryption key
